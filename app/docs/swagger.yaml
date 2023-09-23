@@ -1,0 +1,54 @@
+definitions:
+  http.QueryParam:
+    properties:
+      query:
+        type: string
+    type: object
+  http.SearchResult:
+    properties:
+      EmailsEncontrados:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /query:
+    post:
+      consumes:
+      - application/json
+      description: Perform a search based on the given query. Please note that the
+        query is a string. Search results
+      parameters:
+      - description: Search parameters
+        in: body
+        name: query
+        required: true
+        schema:
+          $ref: '#/definitions/http.QueryParam'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SearchResult'
+      summary: Search text in zincsearch
+      tags:
+      - Email
+  /zinconection:
+    get:
+      consumes:
+      - application/json
+      description: Check connectivity with ZincSearch
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: La conectividad con ZincSearch esta activa, accede por medio
+            de las peticiones HTTP de la api de email
+          schema:
+            type: string
+      summary: verify conectivity with ZincSearch
+      tags:
+      - ZincSearch
+swagger: "2.0"

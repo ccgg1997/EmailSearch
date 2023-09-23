@@ -1,0 +1,83 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/query": {
+            "post": {
+                "description": "Perform a search based on the given query. Please note that the query is a string. Search results",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email"
+                ],
+                "summary": "Search text in zincsearch",
+                "parameters": [
+                    {
+                        "description": "Search parameters",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.QueryParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SearchResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/zinconection": {
+            "get": {
+                "description": "Check connectivity with ZincSearch",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ZincSearch"
+                ],
+                "summary": "verify conectivity with ZincSearch",
+                "responses": {
+                    "200": {
+                        "description": "La conectividad con ZincSearch esta activa, accede por medio de las peticiones HTTP de la api de email",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "http.QueryParam": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string"
+                }
+            }
+        },
+        "http.SearchResult": {
+            "type": "object",
+            "properties": {
+                "EmailsEncontrados": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
