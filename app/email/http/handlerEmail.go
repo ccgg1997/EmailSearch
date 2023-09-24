@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ccgg1997/Go-ZincSearch/email/models"
 	"github.com/ccgg1997/Go-ZincSearch/email/usecase"
 	_ "github.com/swaggo/http-swagger"
 )
@@ -33,8 +32,6 @@ func (eh *EmailHandler) ZincSearchHandler(w http.ResponseWriter, r *http.Request
 	io.WriteString(w, "La conectividad con ZincSearch esta activa, accede por medio de las peticiones HTTP de la api de email")
 }
 
-
-
 // @Summary      Search text in zincsearch
 // @Description  Perform a search based on the given query. Please note that the query is a string. Search results
 // @Tags         Email
@@ -45,90 +42,74 @@ func (eh *EmailHandler) ZincSearchHandler(w http.ResponseWriter, r *http.Request
 // @Router       /query [post]
 func (eh *EmailHandler) QueryHandler(w http.ResponseWriter, r *http.Request) {
 
+	//define and parse the body
 	var requestBody map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {
 		return
 	}
 
-	// Accede al campo query del objeto Go
+	// Access to query value
 	text, ok := requestBody["query"].(string)
 	if !ok {
 		return
 	}
 
-	// Instanciar query
-	var query models.CreateQueryCMD
-	query.Query.Bool.Should = []struct {
-		MatchPhrase map[string]struct {
-			Query string  `json:"query"`
-			Boost float64 `json:"boost"`
-		} `json:"match_phrase"`
-	}{
-		{
-			MatchPhrase: map[string]struct {
-				Query string  `json:"query"`
-				Boost float64 `json:"boost"`
-			}{
-				"content": {
-					Query: text,
-					Boost: 2,
-				},
-			},
+	//template for the zincsearch query
+	var queryTemplate = `{
+		"query": {
+		  "bool": {
+			"should": [
+			  {
+				"match_phrase": {
+				  "content": {
+					"query": "%s",
+					"boost": 2
+				  }
+				}
+			  },
+			  {
+				"match_phrase": {
+				  "date": {
+					"query": "%s",
+					"boost": 1.5
+				  }
+				}
+			  },
+			  {
+				"match_phrase": {
+				  "xfrom": {
+					"query": "%s",
+					"boost": 1.6
+				  }
+				}
+			  },
+			  {
+				"match_phrase": {
+				  "xto": {
+					"query": "%s",
+					"boost": 1.6
+				  }
+				}
+			  }
+			]
+		  }
 		},
-		{
-			MatchPhrase: map[string]struct {
-				Query string  `json:"query"`
-				Boost float64 `json:"boost"`
-			}{
-				"date": {
-					Query: text,
-					Boost: 1.5,
-				},
-			},
-		},
-		{
-			MatchPhrase: map[string]struct {
-				Query string  `json:"query"`
-				Boost float64 `json:"boost"`
-			}{
-				"xfrom": {
-					Query: text,
-					Boost: 1.6,
-				},
-			},
-		},
-		{
-			MatchPhrase: map[string]struct {
-				Query string  `json:"query"`
-				Boost float64 `json:"boost"`
-			}{
-				"xto": {
-					Query: text,
-					Boost: 1.6,
-				},
-			},
-		},
-	}
+		"size": 40
+	  }`
 
-	query.Size = 33
-
-	email, err := eh.emailUsecase.SentQuery(&query)
+	//replace the %s with the text and use it as query in usecase.sentquery
+	query := fmt.Sprintf(queryTemplate, text, text, text, text)
+	email, err := eh.emailUsecase.SentQuery(query)
 	if err != nil {
 		http.Error(w, "Error, formato invalido del body", http.StatusInternalServerError)
 	}
 	w.WriteHeader(http.StatusCreated)
+
 	json.NewEncoder(w).Encode(map[string]interface{}{"EmailsEncontrados": email})
 }
 
-//estructuras para la documentacion
-
-// QueryParam represents the structure for the search query.
-// @Schema
-type QueryParam struct {
-	Query string `json:"query"`
-}
-
+// estructuras para la documentacion de zincsearch
 // SearchResult represents the results of a search query.
 // @Schema
 type SearchResult struct {

@@ -43,11 +43,11 @@ func (eu *EmailUsecase) CreateAndStoreEmail(cmd *models.CreateEmailCMD) (*models
 	return eu.emailGateway.Store(cmd)
 }
 
-func (eu *EmailUsecase) SentQuery(cmdquery *models.CreateQueryCMD) ([]models.CreateEmailCMD, error) {
+func (eu *EmailUsecase) SentQuery(query string) ([]models.CreateEmailCMD, error) {
 	var EstuctEmailsFound QueryJSONData
 
 	// Almacenar el email usando el gateway
-	response, err := eu.emailGateway.SearchQuery(cmdquery)
+	response, err := eu.emailGateway.SearchQuery(query)
 	if err != nil {
 		return nil, err
 	}

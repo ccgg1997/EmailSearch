@@ -39,7 +39,7 @@ func IngestaDeDatos() bool {
 
 func CheckIndexExists() (bool, error) {
 	//crear peticion
-	url := os.Getenv("ZINC_API_URL") + "/api/index/email"
+	url := os.Getenv("ZINC_API_URL") + "/api/index/email/"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return false, err

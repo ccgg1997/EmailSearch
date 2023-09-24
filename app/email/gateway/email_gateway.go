@@ -53,18 +53,16 @@ func (eg *EmailGateway) Store(email *models.CreateEmailCMD) (*models.CreateEmail
 	return email, nil
 }
 
-func (eg *EmailGateway) SearchQuery(query *models.CreateQueryCMD) ([]byte, error) {
-	queryJSON, err := json.Marshal(query)
-	if err != nil {
-		fmt.Println("error parseando query")
-		return nil, err
-	}
+func (eg *EmailGateway) SearchQuery(query string) ([]byte, error) {
+	fmt.Println("queryJSON: ", fmt.Sprintf("%v", query))
+
 	url := os.Getenv("ZINC_API_URL") + "/es/" + eg.index + "/_search"
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(queryJSON))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(query)))
 	if err != nil {
-		fmt.Println("error parseando query")
+		fmt.Println("error creando la solicitud HTTP")
 		return nil, err
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("accept", "application/json")
 	req.SetBasicAuth(eg.username, eg.password)
