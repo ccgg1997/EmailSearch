@@ -27,8 +27,8 @@ type QueryJSONData struct {
 	} `json:"data"`
 }
 
-func NewEmailUsecase(eg gateway.EmailGateway) *EmailUsecase {
-	return &EmailUsecase{
+func NewEmailUsecase(eg gateway.EmailGateway) EmailUsecase {
+	return EmailUsecase{
 		emailGateway: eg,
 	}
 }

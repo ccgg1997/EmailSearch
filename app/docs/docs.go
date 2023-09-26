@@ -41,9 +41,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Busqueda exitosa",
                         "schema": {
-                            "$ref": "#/definitions/http.SearchResult"
+                            "type": "string"
                         }
                     }
                 }
@@ -78,14 +78,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "query": {
-                    "type": "string"
-                }
-            }
-        },
-        "http.SearchResult": {
-            "type": "object",
-            "properties": {
-                "EmailsEncontrados": {
                     "type": "string"
                 }
             }

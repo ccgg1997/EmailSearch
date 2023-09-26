@@ -17,8 +17,8 @@ type EmailGateway struct {
 	password string
 }
 
-func NewEmailGateway(index string) *EmailGateway {
-	return &EmailGateway{
+func NewEmailGateway(index string) EmailGateway {
+	return EmailGateway{
 		index:    index,
 		username: os.Getenv("ZINC_FIRST_ADMIN_USER"),
 		password: os.Getenv("ZINC_FIRST_ADMIN_PASSWORD"),

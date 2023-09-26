@@ -38,7 +38,7 @@ func (eh *EmailHandler) ZincSearchHandler(w http.ResponseWriter, r *http.Request
 // @Accept       json
 // @Produce      json
 // @Param        query      body    QueryParam    true   "Search parameters"
-// @Success      200 {object} SearchResult
+// @Success       200 {string} string "Busqueda exitosa"
 // @Router       /query [post]
 func (eh *EmailHandler) QueryHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -98,7 +98,7 @@ func (eh *EmailHandler) QueryHandler(w http.ResponseWriter, r *http.Request) {
 		"size": 40
 	  }`
 
-	//replace the %s with the text and use it as query in usecase.sentquery
+	//replace the %s with the text and use it as query in usecase.sentquery (IS THE HTTP REQUEST TO ZINCSEARCH)
 	query := fmt.Sprintf(queryTemplate, text, text, text, text)
 	email, err := eh.emailUsecase.SentQuery(query)
 	if err != nil {
@@ -109,27 +109,8 @@ func (eh *EmailHandler) QueryHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{"EmailsEncontrados": email})
 }
 
-// estructuras para la documentacion de zincsearch
-// SearchResult represents the results of a search query.
+// QueryParam represents the structure for the search query.
 // @Schema
-type SearchResult struct {
-	EmailsEncontrados string `json:"EmailsEncontrados"`
-}
-
-// EmailData represents the structure for the email input.
-// @Schema
-type EmailData struct {
-	Date    string `json:"date"`
-	From    string `json:"from"`
-	To      string `json:"to"`
-	Subject string `json:"subject"`
-	XFrom   string `json:"xfrom"`
-	XTo     string `json:"xto"`
-	Content string `json:"content"`
-}
-
-// SuccessResponse represents a generic success response.
-// @Schema
-type SuccessResponse struct {
-	Message string `json:"message"`
+type QueryParam struct {
+	Query string `json:"query"`
 }

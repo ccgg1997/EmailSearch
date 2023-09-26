@@ -4,11 +4,6 @@ definitions:
       query:
         type: string
     type: object
-  http.SearchResult:
-    properties:
-      EmailsEncontrados:
-        type: string
-    type: object
 info:
   contact: {}
 paths:
@@ -29,9 +24,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Busqueda exitosa
           schema:
-            $ref: '#/definitions/http.SearchResult'
+            type: string
       summary: Search text in zincsearch
       tags:
       - Email

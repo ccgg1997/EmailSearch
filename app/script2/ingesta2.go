@@ -66,7 +66,7 @@ func CheckIndexExists() (bool, error) {
 }
 
 func readEmailData() []models.CreateEmailCMD {
-	root := "../../data/enron_mail_20110402/maildir"
+	root := "../../data/enron_mail_20110402/maildir/allen-p"
 	var emails []models.CreateEmailCMD
 	var errorMails []string
 	ch := make(chan models.CreateEmailCMD, 14)
