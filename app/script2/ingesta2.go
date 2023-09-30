@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/ccgg1997/Go-ZincSearch/email/models"
+	"github.com/ccgg1997/Go-ZincSearch/modules/email/models"
 )
 
 func IngestaDeDatos() bool {
@@ -27,9 +27,9 @@ func IngestaDeDatos() bool {
 	if !exists {
 		//si el index no existe, se crea el index y se inicia la ingesta de datos
 		CreateIndex()
-		emails := readEmailData()
-
-		fmt.Println(emails)
+		readEmailData()
+		//emails := readEmailData()
+		//fmt.Println(emails)
 		return true
 	}
 

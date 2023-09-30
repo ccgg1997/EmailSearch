@@ -2,7 +2,7 @@ package api
 
 import (
 	_ "github.com/ccgg1997/Go-ZincSearch/docs"
-	customHTTP "github.com/ccgg1997/Go-ZincSearch/email/http"
+	httpModule "github.com/ccgg1997/Go-ZincSearch/modules/email/http"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -16,7 +16,7 @@ import (
 // @Param			param_name	path		string	true	"Descripción del parámetro"
 // @Success		200			{object}	EMAILS
 // @Router			/email/query [post]
-func Routes(EmailHandler *customHTTP.EmailHandler) *chi.Mux {
+func Routes(EmailHandler *httpModule.EmailHandler) *chi.Mux {
 	r := chi.NewMux()
 
 	// Middleware

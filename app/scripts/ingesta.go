@@ -13,7 +13,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ccgg1997/Go-ZincSearch/email/models"
+	"github.com/ccgg1997/Go-ZincSearch/modules/email/models"
 )
 
 func IngestaDeDatos() int {
