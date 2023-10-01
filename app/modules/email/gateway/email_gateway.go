@@ -1,14 +1,14 @@
 package gateway
 
 import (
-	"bytes"
+
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"os"
 
-	"github.com/ccgg1997/Go-ZincSearch/modules/email/models"
+	"os"
+	zincClient "github.com/ccgg1997/Go-ZincSearch/internal/zincsearch"
+
 )
 
 type EmailGateway struct {
@@ -25,67 +25,31 @@ func NewEmailGateway(index string) EmailGateway {
 	}
 }
 
-func (eg *EmailGateway) Store(email *models.CreateEmailCMD) (*models.CreateEmailCMD, error) {
-	emailJSON, err := json.Marshal(email)
-	if err != nil {
-		return nil, err
-	}
-	url := os.Getenv("ZINC_API_URL") + "/api/" + eg.index + "/_doc"
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(emailJSON))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("accept", "application/json")
-	req.SetBasicAuth(eg.username, eg.password)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("error al almacenar el email en ZincSearch")
-	}
-
-	return email, nil
-}
 
 func (eg *EmailGateway) SearchQuery(query string) ([]byte, error) {
-	//fmt.Println("queryJSON: ", fmt.Sprintf("%v", query))
 
+	//instance new Zincclient
+	client := zincClient.NewZincSearchClient(os.Getenv("ZINC_API_URL"),eg.username,eg.password)
+	
+	//search the query
 	url := os.Getenv("ZINC_API_URL") + "/es/" + eg.index + "/_search"
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(query)))
+	responseBody,err:=client.SearchDocuments(url,query)
 	if err != nil {
-		fmt.Println("error creando la solicitud HTTP")
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("accept", "application/json")
-	req.SetBasicAuth(eg.username, eg.password)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	//extract the hits.hits part of the response and convert to json
+	hitsHitsJSON,err:=ExtractHits(responseBody)
 	if err != nil {
-		fmt.Println("error en la peticion")
-		return nil, errors.New("Error al realizar la búsqueda, error en la petición" + err.Error())
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("error en la respuesta de la petición")
-		return nil, errors.New("error al realizar la búsqueda, estado de la petición: " + resp.Status)
-	}
-
-	var responseBody map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&responseBody); err != nil {
 		return nil, err
 	}
 
-	// Verifica si existe "hits" y "hits" contiene un array
+	fmt.Println("Búsqueda realizada con éxito")
+	return hitsHitsJSON, nil
+}
+
+func ExtractHits(responseBody map[string]interface{} )( []byte,error){
+	
 	hits, ok := responseBody["hits"].(map[string]interface{})
 	if !ok {
 		return nil, errors.New("no se encontró la estructura 'hits' en la respuesta")
@@ -101,7 +65,5 @@ func (eg *EmailGateway) SearchQuery(query string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("Búsqueda realizada con éxito")
-	return hitsHitsJSON, nil
+	return hitsHitsJSON,nil
 }
