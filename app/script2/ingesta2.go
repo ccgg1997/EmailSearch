@@ -15,11 +15,15 @@ import (
 	"sync"
 
 	"github.com/ccgg1997/Go-ZincSearch/modules/email/models"
+	zincClient "github.com/ccgg1997/Go-ZincSearch/internal/zincsearch"
 )
 
 func IngestaDeDatos() bool {
-	// Consulta a ZincSearch
-	exists, err := CheckIndexExists()
+	
+	//instance new Zincclient
+	client := zincClient.NewZincSearchClient()
+
+	exists, err := client.CheckIndexExists()
 	if err != nil {
 		log.Printf("Error en la consulta del index: %v", err)
 	}
@@ -37,33 +41,6 @@ func IngestaDeDatos() bool {
 
 }
 
-func CheckIndexExists() (bool, error) {
-	//crear peticion
-	url := os.Getenv("ZINC_API_URL") + "/api/index/email/"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return false, err
-	}
-
-	//datos de la peticion
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("accept", "application/json")
-	req.SetBasicAuth(os.Getenv("ZINC_FIRST_ADMIN_USER"), os.Getenv("ZINC_FIRST_ADMIN_PASSWORD"))
-
-	//enviar peticion
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return false, err
-	}
-
-	//evaluar respuesta
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return false, errors.New("error: no existe el index")
-	}
-	return true, nil
-}
 
 func readEmailData() []models.CreateEmailCMD {
 	root := "../../data/enron_mail_20110402/maildir/allen-p"
@@ -149,7 +126,16 @@ func processFile(path string, ch chan models.CreateEmailCMD, wg *sync.WaitGroup,
 	body := string(bodyByte)
 	folder := email.Header.Get("X-Folder")
 	fmt.Println(folder + " " + from)
-	ch <- *NewEmail(date, from, to, subject, xFrom, xTo, body, folder) // Asegúrate de que la función NewEmail ahora devuelva un puntero a models.CreateEmailCMD
+	ch <- models.CreateEmailCMD{
+		Date:    date,
+		From:    from,
+		To:      to,
+		Subject: subject,
+		XFrom:   xFrom,
+		XTo:     xTo,
+		Content:    body,
+		Folder:  folder,
+	}
 	return true
 }
 
@@ -193,162 +179,40 @@ func storeEmail(emails []models.CreateEmailCMD) error {
 	return nil
 }
 
-func NewEmail(date string, from string, to string, subject string, xfrom string, xto string, content string, folder string) *models.CreateEmailCMD {
-	return &models.CreateEmailCMD{
-		Date:    date,
-		From:    from,
-		To:      to,
-		Subject: subject,
-		XFrom:   xfrom,
-		XTo:     xto,
-		Content: content,
-		Folder:  folder,
-	}
-}
+
 
 func CreateIndex() error {
-	// Define the payload structure
-	payload := struct {
-		Name     string `json:"name"`
-		Settings struct {
-			NumberOfShards   int `json:"number_of_shards"`
-			NumberOfReplicas int `json:"number_of_replicas"`
-			Analysis         struct {
-				Analyzer map[string]struct {
-					Type       string   `json:"type"`
-					Tokenizer  string   `json:"tokenizer"`
-					Filter     []string `json:"filter"`
-					CharFilter []string `json:"char_filter"`
-				} `json:"analyzer"`
-				Filter map[string]struct {
-					Type      string   `json:"type"`
-					Stopwords []string `json:"stopwords"`
-				} `json:"filter"`
-			} `json:"analysis"`
-		} `json:"settings"`
-		Mappings struct {
-			Properties map[string]struct {
-				Type     string `json:"type"`
-				Analyzer string `json:"analyzer,omitempty"`
-				Format   string `json:"format,omitempty"`
-			} `json:"properties"`
-		} `json:"mappings"`
-	}{
-		Name: "email",
-		Settings: struct {
-			NumberOfShards   int `json:"number_of_shards"`
-			NumberOfReplicas int `json:"number_of_replicas"`
-			Analysis         struct {
-				Analyzer map[string]struct {
-					Type       string   `json:"type"`
-					Tokenizer  string   `json:"tokenizer"`
-					Filter     []string `json:"filter"`
-					CharFilter []string `json:"char_filter"`
-				} `json:"analyzer"`
-				Filter map[string]struct {
-					Type      string   `json:"type"`
-					Stopwords []string `json:"stopwords"`
-				} `json:"filter"`
-			} `json:"analysis"`
-		}{
-			NumberOfShards:   3,
-			NumberOfReplicas: 1,
-			Analysis: struct {
-				Analyzer map[string]struct {
-					Type       string   `json:"type"`
-					Tokenizer  string   `json:"tokenizer"`
-					Filter     []string `json:"filter"`
-					CharFilter []string `json:"char_filter"`
-				} `json:"analyzer"`
-				Filter map[string]struct {
-					Type      string   `json:"type"`
-					Stopwords []string `json:"stopwords"`
-				} `json:"filter"`
-			}{
-				Analyzer: map[string]struct {
-					Type       string   `json:"type"`
-					Tokenizer  string   `json:"tokenizer"`
-					Filter     []string `json:"filter"`
-					CharFilter []string `json:"char_filter"`
-				}{
+
+	texto := `{
+		"name": "email",
+		"settings": {
+			"number_of_shards": 3,
+			"number_of_replicas": 1,
+			"analysis": {
+				"analyzer": {
 					"correo_analyzer": {
-						Type:       "custom",
-						Tokenizer:  "standard",
-						Filter:     []string{"lowercase", "stopwords_filter"},
-						CharFilter: []string{"html_strip"},
-					},
+						"type": "custom",
+						"tokenizer": "standard",
+						"filter": ["lowercase", "stopwords_marker"],
+						"char_filter": ["html_strip"]
+					}
 				},
-				Filter: map[string]struct {
-					Type      string   `json:"type"`
-					Stopwords []string `json:"stopwords"`
-				}{
-					"stopwords_filter": {
-						Type:      "stop",
-						Stopwords: []string{"a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "if", "in", "into", "is", "it", "no", "not", "of", "on", "or", "such", "that", "the", "their", "then", "there", "these", "they", "this", "to", "was", "will", "with"},
-					},
-				},
-			},
-		},
-		Mappings: struct {
-			Properties map[string]struct {
-				Type     string `json:"type"`
-				Analyzer string `json:"analyzer,omitempty"`
-				Format   string `json:"format,omitempty"`
-			} `json:"properties"`
-		}{
-			Properties: map[string]struct {
-				Type     string `json:"type"`
-				Analyzer string `json:"analyzer,omitempty"`
-				Format   string `json:"format,omitempty"`
-			}{
-
-				"Date": {
-					Type:   "date",
-					Format: "EEE, dd MMM yyyy HH:mm:ss Z",
-				},
-				"From": {
-					Type:     "text",
-					Analyzer: "correo_analyzer",
-				},
-				"to": {
-					Type:     "text",
-					Analyzer: "correo_analyzer",
-				},
-				"subject": {
-					Type:     "text",
-					Analyzer: "correo_analyzer",
-				},
-				"content": {
-					Type:     "text",
-					Analyzer: "correo_analyzer",
-				},
-				"xfrom": {
-					Type:     "text",
-					Analyzer: "correo_analyzer",
-				},
-				"xto": {
-					Type:     "text",
-					Analyzer: "correo_analyzer",
-				},
-				"folder": {
-					Type:     "text",
-					Analyzer: "correo_analyzer",
-				},
-			},
-		},
+				"filter": {
+					"stopwords_marker": {
+						"type": "keyword_marker",
+						"keywords": ["a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "if", "in", "into", "is", "it", "no", "not", "of", "on", "or", "such", "that", "the", "their", "then", "there", "these", "they", "this", "to", "was", "will", "with"]
+					}
+				}
+			}
+		}
 	}
-
-	// Convert the payload to JSON
-	indexJSON, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
+	`
 
 	// Define the request URL
 	url := os.Getenv("ZINC_API_URL") + "/api/index"
 
 	// Create a new HTTP request
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(indexJSON))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(texto)))
 	if err != nil {
 		return err
 	}

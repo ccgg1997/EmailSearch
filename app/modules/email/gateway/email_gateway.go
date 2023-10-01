@@ -1,14 +1,13 @@
 package gateway
 
 import (
-
 	"encoding/json"
 	"errors"
 	"fmt"
 
 	"os"
-	zincClient "github.com/ccgg1997/Go-ZincSearch/internal/zincsearch"
 
+	zincClient "github.com/ccgg1997/Go-ZincSearch/internal/zincsearch"
 )
 
 type EmailGateway struct {
@@ -25,21 +24,17 @@ func NewEmailGateway(index string) EmailGateway {
 	}
 }
 
-
 func (eg *EmailGateway) SearchQuery(query string) ([]byte, error) {
 
 	//instance new Zincclient
-	client := zincClient.NewZincSearchClient(os.Getenv("ZINC_API_URL"),eg.username,eg.password)
-	
-	//search the query
-	url := os.Getenv("ZINC_API_URL") + "/es/" + eg.index + "/_search"
-	responseBody,err:=client.SearchDocuments(url,query)
+	client := zincClient.NewZincSearchClient()
+	responseBody, err := client.SearchDocuments(query)
 	if err != nil {
 		return nil, err
 	}
 
 	//extract the hits.hits part of the response and convert to json
-	hitsHitsJSON,err:=ExtractHits(responseBody)
+	hitsHitsJSON, err := ExtractHits(responseBody)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +43,8 @@ func (eg *EmailGateway) SearchQuery(query string) ([]byte, error) {
 	return hitsHitsJSON, nil
 }
 
-func ExtractHits(responseBody map[string]interface{} )( []byte,error){
-	
+func ExtractHits(responseBody map[string]interface{}) ([]byte, error) {
+
 	hits, ok := responseBody["hits"].(map[string]interface{})
 	if !ok {
 		return nil, errors.New("no se encontró la estructura 'hits' en la respuesta")
@@ -65,5 +60,5 @@ func ExtractHits(responseBody map[string]interface{} )( []byte,error){
 	if err != nil {
 		return nil, err
 	}
-	return hitsHitsJSON,nil
+	return hitsHitsJSON, nil
 }

@@ -61,7 +61,8 @@ func (eh *EmailHandler) QueryHandler(w http.ResponseWriter, r *http.Request) {
 	query := fmt.Sprintf(queryTemplate, text, text, text, text)
 	email, err := eh.emailUsecase.FindQuery(query)
 	if err != nil {
-		http.Error(w, "Error, con la conexion de zincsearch", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 
