@@ -34,6 +34,7 @@ func Routes(EmailHandler *httpModule.EmailHandler) *chi.Mux {
 
 	r.Post("/query", EmailHandler.QueryHandler)
 	r.Get("/zinconection", EmailHandler.ZincSearchHandler)
+	
 	r.Get("/*", httpSwagger.WrapHandler)
 	return r
 }

@@ -8,6 +8,9 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+
+	"github.com/ccgg1997/Go-ZincSearch/modules/email/models"
+	
 )
 
 type ZincSearchClient struct {
@@ -39,13 +42,52 @@ func (n *ZincSearchClient) CheckClient() error {
 func (n *ZincSearchClient) SearchDocuments(query string) (map[string]interface{}, error) {
 	//search the query
 	url := n.Url + "/es/" + "email" + "/_search"
-	return n.ZincRequest("POST", url, query)
+	return n.ZincRequestSearch( url, query)
 }
 
-func (n *ZincSearchClient) ZincRequest(typeRequest string, url string, query string) (map[string]interface{}, error) {
+func (n *ZincSearchClient) StoreEmailBulk(emails []models.CreateEmailCMD)error{
+	payload := struct {
+		Index   string                  `json:"index"`
+		Records []models.CreateEmailCMD `json:"records"`
+	}{
+		Index:   "email",
+		Records: emails,
+	}
+
+	emailJSON, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	if err != nil {
+		return err
+	}
+	url := n.Url + "/api/" + "/_bulkv2"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(emailJSON))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("accept", "application/json")
+	req.SetBasicAuth(os.Getenv("ZINC_FIRST_ADMIN_USER"), os.Getenv("ZINC_FIRST_ADMIN_PASSWORD"))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("error al almacenar el email en ZincSearch")
+	}
+
+	return nil
+}
+
+func (n *ZincSearchClient) ZincRequestSearch( url string, query string) (map[string]interface{}, error) {
 
 	//set the request, header and auth
-	req, err := http.NewRequest(typeRequest, url, bytes.NewBuffer([]byte(query)))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(query)))
 	if err != nil {
 		fmt.Println("error creando la solicitud HTTP")
 		return nil, err
@@ -105,4 +147,61 @@ func (n *ZincSearchClient) CheckIndexExists() (bool, error) {
 		return false, errors.New("error: no existe el index")
 	}
 	return true, nil
+}
+
+func (n *ZincSearchClient)  CreateIndex() error {
+
+	texto := `{
+		"name": "email",
+		"settings": {
+			"number_of_shards": 1,
+			"number_of_replicas": 1,
+			"analysis": {
+				"analyzer": {
+					"correo_analyzer": {
+						"type": "custom",
+						"tokenizer": "standard",
+						"filter": ["lowercase", "stopwords_marker"],
+						"char_filter": ["html_strip"]
+					}
+				},
+				"filter": {
+					"stopwords_marker": {
+						"type": "keyword_marker",
+						"keywords": ["a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "if", "in", "into", "is", "it", "no", "not", "of", "on", "or", "such", "that", "the", "their", "then", "there", "these", "they", "this", "to", "was", "will", "with"]
+					}
+				}
+			}
+		}
+	}
+	`
+
+	// Define the request URL
+	url := os.Getenv("ZINC_API_URL") + "/api/index"
+
+	// Create a new HTTP request
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(texto)))
+	if err != nil {
+		return err
+	}
+
+	// Set the request headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("accept", "application/json")
+	req.SetBasicAuth(os.Getenv("ZINC_FIRST_ADMIN_USER"), os.Getenv("ZINC_FIRST_ADMIN_PASSWORD"))
+
+	// Send the request using an HTTP client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check the response status code
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("error al crear el índice en ZincSearch")
+	}
+
+	return nil
 }

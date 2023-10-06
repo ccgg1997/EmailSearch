@@ -1,13 +1,12 @@
 package zincsearch
 
 import (
-	"os"
 	"testing" // Add the import path for the testing package
 )
 
 
 func Test_checkClient(t *testing.T) {
-	r := NewZincSearchClient(os.Getenv("ZINC_API_URL"), "user", "password")
+	r := NewZincSearchClient()
 	err := r.CheckClient()
 
 	if err != nil {

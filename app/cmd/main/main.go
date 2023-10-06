@@ -15,13 +15,12 @@ func main() {
 	//instance the ingestion script and the pprof
 	waitGr.Add(1)
 	go handleIngestion(&waitGr)
-
 	//intance the email module
 	emailHandler = instanceEmail()
+	waitGr.Wait()
 
 	//instance the server
 	mux := api.Routes(emailHandler)
 	server := api.NewServer(mux)
 	server.Run()
-	waitGr.Wait()
 }
