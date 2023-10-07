@@ -12,12 +12,13 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	zincClient "github.com/ccgg1997/Go-ZincSearch/internal/zincsearch"
 	"github.com/ccgg1997/Go-ZincSearch/modules/email/models"
 )
 
-func IngestaDeDatos() bool {
+func IngestaDeDatos() (bool, error) {
 
 	//instance new Zincclient
 	client := zincClient.NewZincSearchClient()
@@ -29,24 +30,38 @@ func IngestaDeDatos() bool {
 
 	if !exists {
 		//si el index no existe, se crea el index y se inicia la ingesta de datos
+		start := time.Now()
 		CreateIndex()
 		IndexEmailData()
+		duration := time.Since(start).Milliseconds()
+		fmt.Printf("%dms \n", duration)
+		fmt.Println("Total folders -----------------------------------: ")
 		//emails := IndexEmailData()
 		//fmt.Println(emails)
-		return true
+		return true, nil
 	}
 
-	return false
+	return false, nil
 
 }
 
 func IndexEmailData() []models.CreateEmailCMD {
-	root := "../../data/enron_mail_20110402/maildir/allen-p/_sent_mail/example"
+	root := "../../data/enron_mail_20110402/maildir"
 	var emails []models.CreateEmailCMD
 	var errorMails []string
-	ch := make(chan models.CreateEmailCMD, 14)
+	ch := make(chan models.CreateEmailCMD, 1)
 	var wg sync.WaitGroup
-
+	go func() {
+		// Collect emails from channel
+		for email := range ch {
+			emails = append(emails, email)
+			if len(emails) == 9000 {
+				client := zincClient.NewZincSearchClient()
+				client.StoreEmailBulk(emails)
+				emails = []models.CreateEmailCMD{}
+			}
+		}
+	}()
 	// Walk files
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -65,16 +80,6 @@ func IndexEmailData() []models.CreateEmailCMD {
 		wg.Wait()
 		close(ch)
 	}()
-
-	// Collect emails from channel
-	for email := range ch {
-		emails = append(emails, email)
-		if len(emails) == 9000 {
-			client := zincClient.NewZincSearchClient()
-			client.StoreEmailBulk(emails)
-			emails = []models.CreateEmailCMD{}
-		}
-	}
 
 	// Store any remaining emails
 	if len(emails) > 0 {

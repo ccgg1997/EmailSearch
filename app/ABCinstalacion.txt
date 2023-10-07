@@ -30,28 +30,3 @@ swag init -g ../../cmd/main/main.go -o ../../docs
 generar el profilling: 
 go tool pprof cpu.pprof
 
-funcion para crear un email:
-// @Summary      Index in zincsearch
-// @Description  Store an email entry (It´s an example to add a new email value).
-// @Tags         Email
-// @Accept       json
-// @Produce      json
-// @Param        emailData   body    EmailData    true   "Email parameters"
-// @Success      200 {object} SuccessResponse
-// @Router       /email [post]
-func (eh *EmailHandler) CreateEmailHandler(w http.ResponseWriter, r *http.Request) {
-	var cmd models.CreateEmailCMD
-	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	email, err := eh.emailUsecase.CreateAndStoreEmail(&cmd)
-	if err != nil {
-		http.Error(w, "Error, formato invalido del body", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{"creado con éxito": email})
-}

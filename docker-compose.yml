@@ -19,6 +19,8 @@ services:
       - ZINC_FIRST_ADMIN_USER=admin
       - ZINC_FIRST_ADMIN_PASSWORD=Complexpass#123
       - ZINC_API_URL=http://zincsearch:4080
+      - CGO_ENABLED=1
+      - GOMAXPROCS=4
     ports:
       - "8080:8088"
       - "6061:6060"

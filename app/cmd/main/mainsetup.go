@@ -31,7 +31,7 @@ func handleIngestion(waitGr *sync.WaitGroup) error {
 		fmt.Printf("Error starting heap profile: %v", err)
 		return err
 	}
-	
+
 	ingesta, err := script.IngestaDeDatos()
 
 	if err == nil && !ingesta {
@@ -44,9 +44,9 @@ func handleIngestion(waitGr *sync.WaitGroup) error {
 	if err := profiler.StopCPUProfile(); err != nil {
 		return err
 	}
-	profiler.StopHeapProfile()
+	defer profiler.StopHeapProfile()
 
-	waitGr.Done()
+	defer waitGr.Done()
 	fmt.Print("Data ingestion succeeded")
 	return nil
 }
